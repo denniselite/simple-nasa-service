@@ -1,0 +1,13 @@
+listen: 127.0.0.1:3001
+
+pgsql:
+  host: 127.0.0.1
+  port: 5432
+  username: postgres
+  password: postgres
+  database: nasa
+
+NASAServer:
+  API-KEY: N7LkblDsc5aen05FJqBQ8wU4qSdmsftwJagVK7UD
+  endPoint: https://api.nasa.gov/neo/rest
+  APIVersion: /v1
