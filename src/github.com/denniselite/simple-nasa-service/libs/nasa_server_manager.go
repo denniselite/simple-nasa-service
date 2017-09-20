@@ -24,7 +24,7 @@ func (nsm *NasaServerManager) GetNEOInfo(page int) (neos structs.NasaResponse, e
 	params := make(map[string]string)
 	params[APIKeyQueryParam] = nsm.Config.APIKey
 	params["page"] = strconv.Itoa(page)
-	params["size"] = "100"
+	params["size"] = "20"
 
 	response, err := nsm.doRequest(http.MethodGet, pathNeo, params)
 	if err != nil {

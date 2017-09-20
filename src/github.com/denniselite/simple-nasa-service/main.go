@@ -11,9 +11,13 @@ import (
 	"fmt"
 	"github.com/denniselite/simple-nasa-service/service"
 	"github.com/denniselite/simple-nasa-service/libs"
+	"runtime"
 )
 
 func main()  {
+	numCPU := runtime.NumCPU()
+	fmt.Println("Numbers of CPU:", numCPU)
+	runtime.GOMAXPROCS(numCPU)
 	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile | log.LUTC)
 
 	config := loadConfig()
@@ -35,6 +39,7 @@ func main()  {
 	ns.Config = config.NSManager
 
 	nasaService := new(service.NasaService)
+	nasaService.NumCPU = numCPU
 	nasaService.Run(db, ns)
 
 	if err := fasthttp.ListenAndServe(config.Listen, fastHTTPHandler); err != nil {
