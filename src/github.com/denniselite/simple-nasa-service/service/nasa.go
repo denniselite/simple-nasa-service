@@ -8,14 +8,16 @@ import (
 	"time"
 	"strconv"
 	"errors"
+	"github.com/jinzhu/gorm"
 )
 
 type NasaService struct {
 	Db *libs.DB
 	NSManager *libs.NasaServerManager
-	pagesProcessed int
 	NumCPU int
 }
+
+var nasaService *NasaService
 
 func (s *NasaService) Run(db *libs.DB, ns *libs.NasaServerManager) {
 	s.Db = db
@@ -28,6 +30,13 @@ func (s *NasaService) Run(db *libs.DB, ns *libs.NasaServerManager) {
 			panic(err)
 		}
 	}
+
+	nasaService = s
+}
+
+func GetNasaService() (s *NasaService) {
+	s = nasaService
+	return
 }
 
 func (s *NasaService) isDbEmpty() bool {
@@ -58,40 +67,20 @@ func (s *NasaService) processNEOs() (err error) {
 		return
 	}
 
-	var chunk int
-	var chunkRest int
-
-	chunk = response.Page.TotalPages / s.NumCPU
-	chunkRest = response.Page.TotalPages % s.NumCPU
-
-	var routinesCount int
-	if s.NumCPU > 1 {
-		routinesCount = s.NumCPU - 1
-	} else {
-		routinesCount = 1
+	for i := 1; i <= response.Page.TotalPages; i++ {
+		response, err = s.NSManager.GetNEOInfo(i)
+		if err != nil {
+			log.Printf("Error to process NASA API response: %s", err.Error())
+			return
+		}
+		err = s.saveNeoFromResponse(&response)
+		if err != nil {
+			log.Println(err)
+			break;
+		}
+		fmt.Printf("\rPages processed: %d of %d", i, response.Page.TotalPages)
 	}
-
-	for i := 0; i < routinesCount; i++ {
-		go func(i int) {
-			var endCount int
-			if i != routinesCount {
-				endCount = (i + 1) * chunk
-			} else {
-				endCount = (i + 1) * chunk + chunkRest
-			}
-			for endCount > response.Page.Number {
-				response, err = s.NSManager.GetNEOInfo(i * chunk + 1)
-				if err != nil {
-					log.Printf("Error to process NASA API response: %s", err.Error())
-					return
-				}
-				err = s.saveNeoFromResponse(&response)
-				if err != nil {
-					log.Println(err)
-				}
-			}
-		}(i)
-	}
+	log.Println("Processed!")
 	return
 }
 
@@ -126,11 +115,22 @@ func (s *NasaService) saveNeoFromResponse(response *structs.NasaResponse) (err e
 			}
 		}
 	}
+	return
+}
 
-	s.pagesProcessed++
-	log.Println(fmt.Sprintf("Pages processed: %d of %d", s.pagesProcessed, response.Page.TotalPages))
-	if (response.Page.Number > 0) && (response.Page.Number == response.Page.TotalPages) {
-		log.Println("Processed!")
-	}
+func (s *NasaService) GetHazardous() (res []structs.NEO, err error) {
+	err = s.Db.Exec("SELECT neos.").
+		Where("is_hazardous = TRUE").
+		Find(&res).Error
+	return
+}
+
+func (s *NasaService) GetFastest(isHazardous bool) (res structs.NEO, err error) {
+	err = s.Db.Debug().
+		Where("is_hazardous = ?", isHazardous).
+		Preload("NEOData", func(db *gorm.DB) *gorm.DB {
+		return db.Where("neo_data.speed > 0").Order("neo_data.speed DESC")
+	}).
+		First(&res).Error
 	return
 }

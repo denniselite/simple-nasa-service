@@ -1,20 +1,25 @@
 package structs
 
 import (
-	"github.com/jinzhu/gorm"
 	"time"
 )
 
 type NEO struct {
-	gorm.Model
-	Reference string
-	Name string
+	Reference   string `gorm:"primary_key" sql:"not null;unique"`
+	Name        string
 	IsHazardous bool
+	NEOData     []NEOData `gorm:"ForeignKey:Reference"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   *time.Time `sql:"index"`
 }
 
 type NEOData struct {
-	gorm.Model
-	Reference string
-	Date time.Time
-	Speed float64
+	Id        int `gorm:"primary_key"`
+	Reference string `sql:"index"`
+	Date      time.Time
+	Speed     float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time `sql:"index"`
 }

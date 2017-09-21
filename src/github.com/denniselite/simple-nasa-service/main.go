@@ -75,7 +75,11 @@ func loadConfig() structs.Config {
 func fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	switch string(ctx.Path()) {
 	case "/":
-		handlers.MainHandler(ctx)
+		handlers.HomeHandler(ctx)
+	case "/neo/hazardous":
+		handlers.HazardousHandler(ctx)
+	case "/neo/fastest":
+		handlers.FastestHandler(ctx)
 	default:
 		ctx.Error("Unsupported path", fasthttp.StatusNotFound)
 	}

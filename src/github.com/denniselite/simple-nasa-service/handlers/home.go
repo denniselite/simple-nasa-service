@@ -6,22 +6,21 @@ import (
 	"encoding/json"
 )
 
-type MainHandlerRequest struct{}
-
-type MainHandlerResponse struct {
+type HomeHandlerResponse struct {
 	Hello string `json:"hello"`
 }
 
-func (m *MainHandlerResponse) ToJSON() []byte {
+func (m *HomeHandlerResponse) ToJSON() []byte {
 	r, _ := json.Marshal(*m)
 	return r
 }
 
-func MainHandler(ctx *fasthttp.RequestCtx) {
-	res := new(MainHandlerResponse)
+func HomeHandler(ctx *fasthttp.RequestCtx) {
+	res := new(HomeHandlerResponse)
 	res.Hello = "world!"
-	log.Printf("Response: %+v\n", *res)
 	ctx.SetContentType("Application/JSON")
 	ctx.SetStatusCode(fasthttp.StatusOK)
 	ctx.SetBody(res.ToJSON())
+	log.Printf("Response: %+v\n", string(res.ToJSON()))
+	return
 }
